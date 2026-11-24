@@ -6,7 +6,7 @@
 [ext_resource type="FontFile" uid="uid://dnw3gmmsf4lfv" path="res://assets/PixelOperator8-Bold.ttf" id="3_w601o"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_qql8j"]
-radius = 126.1943
+radius = 112.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ray"]
 size = Vector2(20, 866)

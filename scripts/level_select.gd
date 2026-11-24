@@ -8,8 +8,8 @@ const CREAM := Color("f5e6d3")
 const GREY := Color("8a8a8a")
 const GOLD := preload("res://assets/gold star.png")
 const GRAY := preload("res://assets/gray star.png")
-const SIZE := Vector2(260, 150)
-const GAP := 50.0
+const SIZE := Vector2(180, 150)
+const GAP := 30.0
 
 var rects: Array[Rect2] = []
 var selected := 0
@@ -44,8 +44,10 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var i := _hover(get_global_mouse_position())
 		if i >= 0 and Global.is_unlocked(i):
+			Sfx.play("click")
 			Global.start_level(i)
 		elif _back_rect().has_point(get_global_mouse_position()):
+			Sfx.play("click")
 			_back()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
@@ -54,6 +56,7 @@ func _input(event: InputEvent) -> void:
 			KEY_LEFT, KEY_UP, KEY_A, KEY_W:
 				_move(-1)
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+				Sfx.play("click")
 				Global.start_level(selected)
 			KEY_ESCAPE:
 				_back()
@@ -86,7 +89,7 @@ func _draw() -> void:
 		var r := rects[i].grow(6.0) if i == hover_i else rects[i]
 		draw_rect(r, CREAM if open else GREY)
 		draw_rect(r, TEAL if open else Color("555555"), false, 6)
-		_centered("LEVEL %d" % (i + 1), r, 26, TEAL if open else Color("555555"))
+		_centered("LEVEL %d" % (i + 1), r, 22, TEAL if open else Color("555555"))
 		if not open:
 			_centered("LOCKED", Rect2(r.position.x, r.position.y + 90, r.size.x, 30), 14, Color("555555"))
 		elif Global.levels_done[i]:

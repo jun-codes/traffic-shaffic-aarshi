@@ -76,6 +76,8 @@ func footprint_on_road(center: Vector2, rel: Rect2, round_shape: bool) -> bool:
 				return true
 	return false
 
+const HOVER_SCALE := 1.12     # how much an item grows while the mouse is on it
+
 # Bounding box (relative to the item's origin) and shape kind of the item's Area2D shape.
 # Returns [Rect2, bool is_round].
 func area_footprint(item: Node2D, area: Area2D) -> Array:
@@ -83,7 +85,11 @@ func area_footprint(item: Node2D, area: Area2D) -> Array:
 		var cs := child as CollisionShape2D
 		if cs != null and cs.shape != null:
 			var world: Rect2 = cs.global_transform * cs.shape.get_rect()
-			return [Rect2(world.position - item.global_position, world.size), cs.shape is CircleShape2D]
+			# Items grow a little while the mouse is on them (hover). The road check uses the
+			# normal size, otherwise a hovered item would not fit into spots it does fit once
+			# it is dropped (for example the thin divider islands of Level 2).
+			var k := 1.0 / HOVER_SCALE if item.get("draggable") == true else 1.0
+			return [Rect2((world.position - item.global_position) * k, world.size * k), cs.shape is CircleShape2D]
 	return [Rect2(-10, -10, 20, 20), false]
 
 # Where a dragged item should be: the snapped position under the mouse, but if any part of
@@ -96,7 +102,7 @@ func drag_position(mouse: Vector2, grab_offset: Vector2, rel: Rect2 = Rect2(-1, 
 		return p
 	var best := p
 	var best_d := INF
-	for r in range(1, 16):                       # search rings of grid points around it
+	for r in range(1, 41):                       # search rings of grid points around it
 		for dx in range(-r, r + 1):
 			for dy in range(-r, r + 1):
 				if maxi(absi(dx), absi(dy)) != r:
@@ -127,14 +133,56 @@ const LEVEL_PATHS := [
 	"res://scenes/Level1/level 1.tscn",
 	"res://scenes/Level2/level 2.tscn",
 	"res://scenes/Level3/level 3.tscn",
+	"res://scenes/Level4/level 4.tscn",
+	"res://scenes/Level5/level 5.tscn",
 ]
 const SAVE_PATH := "user://progress.cfg"
-var levels_done: Array = [false, false, false]
-var level_stars: Array = [0, 0, 0]      # best star rating per level (0 = never finished)
+var levels_done: Array = [false, false, false, false, false]
+var level_stars: Array = [0, 0, 0, 0, 0]      # best star rating per level (0 = never finished)
+
+# --- Car colour (chosen on the customise screen, used for the player car in the whole game) ---
+const CAR_SKINS := [["red", "RED"], ["cyan", "CYAN"], ["purp", "PURPLE"]]   # [id, name]
+var car_skin := "red"
+var sfx_volume := 1.0        # 0..1, volume of the sound effects (settings screen)
+var music_volume := 1.0      # 0..1, volume of the background music (settings screen)
+
+func set_music_volume(v: float) -> void:
+	music_volume = clampf(v, 0.0, 1.0)
+	Music.apply_volume()
+
+func set_sfx_volume(v: float) -> void:
+	sfx_volume = clampf(v, 0.0, 1.0)
+	Sfx.apply_volume()
+
+func save_settings() -> void:
+	_save()
+
+func set_car_skin(id: String) -> void:
+	car_skin = id
+	_save()
+
+# The sprite frames of the player car in the chosen colour (null = the red car of the scene).
+func car_frames() -> SpriteFrames:
+	if car_skin == "red":
+		return null
+	return load("res://assets/cars/%s_frames.tres" % car_skin) as SpriteFrames
+
+func _save() -> void:
+	var cfg := ConfigFile.new()
+	for k in LEVEL_PATHS.size():
+		cfg.set_value("done", str(k), levels_done[k])
+		cfg.set_value("stars", str(k), level_stars[k])
+	cfg.set_value("settings", "car_skin", car_skin)
+	cfg.set_value("settings", "sfx_volume", sfx_volume)
+	cfg.set_value("settings", "music_volume", music_volume)
+	cfg.save(SAVE_PATH)
 
 func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) == OK:
+		car_skin = str(cfg.get_value("settings", "car_skin", "red"))
+		sfx_volume = clampf(float(cfg.get_value("settings", "sfx_volume", 1.0)), 0.0, 1.0)
+		music_volume = clampf(float(cfg.get_value("settings", "music_volume", 1.0)), 0.0, 1.0)
 		for i in LEVEL_PATHS.size():
 			levels_done[i] = bool(cfg.get_value("done", str(i), false))
 			level_stars[i] = int(cfg.get_value("stars", str(i), 0))
@@ -152,11 +200,7 @@ func complete_level(path: String, stars: int = 1) -> void:
 		return
 	levels_done[i] = true
 	level_stars[i] = maxi(level_stars[i], stars)
-	var cfg := ConfigFile.new()
-	for k in LEVEL_PATHS.size():
-		cfg.set_value("done", str(k), levels_done[k])
-		cfg.set_value("stars", str(k), level_stars[k])
-	cfg.save(SAVE_PATH)
+	_save()
 
 # Opens level i from the menu; "next level" then follows on to the one after it.
 func start_level(i: int) -> void:
@@ -178,14 +222,17 @@ func items_used() -> int:
 			used += 1
 	return used
 
-func stars_for(items: int) -> int:
-	return 3 if items <= 1 else (2 if items == 2 else 1)
+# Fewest items that can win each level (Level 4 needs both its signs, Level 5 all five of its items).
+const PAR := [1, 1, 1, 2, 5]
+
+func stars_for(items: int, par: int = 1) -> int:
+	return 3 if items <= par else (2 if items == par + 1 else 1)
 
 # New game: forget every finished level and star, and overwrite the save file.
 func reset_progress() -> void:
-	levels_done = [false, false, false]
-	level_stars = [0, 0, 0]
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	levels_done = [false, false, false, false, false]
+	level_stars = [0, 0, 0, 0, 0]
+	_save()          # rewrites the save file with no progress (the car colour is kept)
 
 # Continue: first level that is open but not finished yet (the level picker if everything is done).
 func continue_index() -> int:

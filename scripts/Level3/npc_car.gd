@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 
 ## Car colour. "default" keeps the colour set in npc_car.tscn.
-@export_enum("default", "cyan", "purp") var skin: String = "default"
+@export_enum("default", "cyan", "purp", "grey") var skin: String = "default"
 @export var tilemap_layer: TileMapLayer
 @export var speed: float = 120
 @export var tile_size: float = 20.0
@@ -42,8 +42,8 @@ func _physics_process(_delta: float) -> void:
 		velocity = current_direction * minf(speed, Global.speed_cap_px())
 	move_and_slide()
 	_check_hit_player()
+	_check_off_road()
 
-		
 const TURNS := {
 	"RU": [0, false],   "UL": [-90, false],
 	"LD": [-180, false], "DR": [-270, false],
@@ -125,6 +125,11 @@ func stop_for(seconds: float) -> void:
 signal hit_player
 var hit_sent := false
 
+# Crash of this car on its own or with another NPC car (not the player): the level ends with
+# "a different car crashed".
+signal crashed
+var crash_sent := false
+
 func _check_hit_player() -> void:
 	if hit_sent:
 		return
@@ -133,6 +138,10 @@ func _check_hit_player() -> void:
 		if other != null and other.is_in_group("maincar"):
 			hit_sent = true
 			hit_player.emit()
+			return
+		if other is CharacterBody2D and other != self and other.is_in_group("npc") and not crash_sent:
+			crash_sent = true
+			crashed.emit()
 			return
 
 
@@ -166,3 +175,17 @@ func _on_u_turn() -> void:
 	car.rotation_degrees = TURNS["DL"][0]
 	car.flip_h = TURNS["DL"][1]
 	car.play("turn", turn_anim_speed)
+
+# After this car has turned off the main road (a compulsory turn) it has to stay on asphalt,
+# like the player's car: the whole car on a tile that has a driving direction.
+func _check_off_road() -> void:
+	if crash_sent or not turn_sig:
+		return
+	if global_position.x < 0.0 or global_position.x > 933.0 or global_position.y < 0.0 or global_position.y > 640.0:
+		return                                  # off the screen: nothing to check
+	for d in [Vector2.ZERO, Vector2(30, 0), Vector2(-30, 0), Vector2(0, 30), Vector2(0, -30)]:
+		var tile := tilemap_layer.get_cell_tile_data(tilemap_layer.local_to_map(tilemap_layer.to_local(global_position + d)))
+		if tile == null or str(tile.get_custom_data("direction")).strip_edges() == "":
+			crash_sent = true
+			crashed.emit()
+			return

@@ -6,6 +6,7 @@ extends Node2D
 
 @export var car_method: StringName = &"_on_turn_left_turn"   # what a car does at this sign
 @export var drag_rotation_degrees := 90.0                    # the picture turns this much once picked up
+@export var cross_distance := 0.0   # the car must drive this far past the sign before it reacts (0 = right away)
 
 @onready var label: Label = $Label
 @onready var sprite: Sprite2D = $Sprite2D
@@ -15,6 +16,7 @@ var is_dragging := false
 var draggable := false      # mouse is over the sign
 var offset: Vector2         # offset between the sign's position and the mouse when grabbed
 var turned: Array = []      # cars that already obeyed this sign
+var waiting: Array = []     # cars that saw the sign and are driving up to it
 
 func _ready():
 	label.visible = false
@@ -72,4 +74,18 @@ func _on_ray_body_entered(body: Node2D) -> void:
 	if body.global_position.x > global_position.x:   # cars already past the sign never see it
 		return
 	turned.append(body)
-	body.call(car_method)
+	if cross_distance <= 0.0:
+		body.call(car_method)
+	else:
+		waiting.append(body)             # first it has to drive past the sign
+
+# A car that saw the sign turns only once it has crossed it.
+func _physics_process(_delta: float) -> void:
+	if not Global.play:
+		return
+	for b in waiting.duplicate():
+		if not is_instance_valid(b):
+			waiting.erase(b)
+		elif b.global_position.x >= global_position.x + cross_distance:
+			waiting.erase(b)
+			b.call(car_method)

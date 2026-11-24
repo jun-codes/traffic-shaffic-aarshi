@@ -93,12 +93,14 @@ func _car_sees_signal(body: Node2D) -> void:
 	ray_used = true
 	var normal_speed: float = Global.speed_mult
 	Global.speed_mult = 0.0                          # car stops
-	await get_tree().create_timer(1.0).timeout
-	traff_icon.speed_scale = 2.0
-	traff_icon.play("traffic")                        # red -> green
+	# The pedestrians see the stopped car and start to run off the road right away, not only
+	# when the light turns green.
 	var safe_now: bool = Global.safe
 	if safe_now:
 		npcs_leaving = true
+	await get_tree().create_timer(1.0).timeout
+	traff_icon.speed_scale = 2.0
+	traff_icon.play("traffic")                        # red -> green
 	get_tree().create_timer(0.3).timeout.connect(traff_icon.pause)   # hold on green
 	await get_tree().create_timer(0.5).timeout
 	Global.speed_mult = normal_speed                  # car drives on

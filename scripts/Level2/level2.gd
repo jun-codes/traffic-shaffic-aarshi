@@ -28,6 +28,8 @@ var hint: Node2D
 var finished := false
 var turn_checked := false
 var crashing := false
+var crash_kind := ""          # "early" / "late": where the wrongly placed sign sent the car
+var crash_time := 0.0
 var car_start_x := 0.0
 
 func _ready() -> void:
@@ -89,11 +91,12 @@ func _check_u_turn_ray() -> void:
 			if ZONES["u_turn"].has_point(s.position):
 				_open_route()            # correct spot: the car takes the U-turn
 			else:
-				_crash_turn()            # wrong spot: it turns here, into the divider
+				_crash_turn(s)         # wrong spot: it turns here, into the divider
 			return
 
-func _crash_turn() -> void:
+func _crash_turn(sign_node: Node) -> void:
 	crashing = true
+	crash_kind = "late" if sign_node.position.x > ZONES["u_turn"].end.x else "early"
 	car.turn_sig = true                  # stop following the road tiles
 	car.velocity = Vector2.UP * car.speed * Global.speed_mult
 	var sprite: AnimatedSprite2D = car.get_node("AnimatedSprite2D")
@@ -101,11 +104,15 @@ func _crash_turn() -> void:
 	sprite.flip_h = false
 	sprite.play("turn", car.turn_anim_speed)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if finished or not Global.play:
 		return
 	if crashing:
-		if car.global_position.y < CRASH_Y:   # reached the divider
+		crash_time += delta
+		# Reached the divider, or the car is wedged against it (the divider to the right of the gap
+		# stops it a bit lower down, before it gets as far as CRASH_Y).
+		var blocked := crash_time > 0.3 and car.get_real_velocity().length() < 30.0
+		if car.global_position.y < CRASH_Y or blocked:
 			finished = true
 			$death._on_car_death()
 		return
@@ -134,3 +141,26 @@ func _draw_hint() -> void:
 		var z: Rect2 = ZONES[s.kind]
 		hint.draw_rect(z, Color(0.2, 1.0, 0.5, pulse))
 		hint.draw_rect(z, Color(0.2, 1.0, 0.5, 0.9), false, 2.0)
+
+# --- Feedback on the failure screens ---------------------------------------------------
+func _placed_u_turn() -> Node:
+	for s in _signs():
+		if s.kind == "u_turn" and not s.is_in_sidebar():
+			return s
+	return null
+
+func death_feedback() -> String:
+	if crash_kind == "late":      # the sign stood past the turn
+		return "The sign needs to be placed before the turn so that the car has time to react. Try again!"
+	if crash_kind == "early":     # the sign stood before the turn
+		return "The car turned the moment it saw the sign, before the turn, and hit the divider. Try again!"
+	# No crash at the divider: the car drove on into the cow / pedestrian.
+	if _placed_u_turn() != null:  # a sign was placed but the car never reacted to it
+		return "The sign was too far from the turn for the car to react to it. Try again!"
+	var signal_item := find_child("traffic_signal", true, false) as Node2D
+	if signal_item != null and signal_item.global_position.x < 933.0:
+		return "Try not to kill pedestrians. Try again!"
+	return "Find a way to make the car turn towards its destination."
+
+func not_home_feedback() -> String:
+	return "You didn't kill anyone, but that is not your destination. Try again!"

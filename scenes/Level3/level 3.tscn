@@ -2759,7 +2759,7 @@ pattern_11 = SubResource("TileMapPattern_5hph3")
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_j7kpp"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_turnray"]
-size = Vector2(20, 866)
+size = Vector2(20, 1400)
 
 [node name="Level 3" type="Node2D" unique_id=1126981036]
 script = ExtResource("99_level3")
@@ -2779,6 +2779,8 @@ tile_set = SubResource("TileSet_nqat1")
 position = Vector2(352, 604)
 script = ExtResource("98_finish")
 size = Vector2(118, 12)
+heading = Vector2(0, 1)
+sprite_scale = 0.25
 
 [node name="pause" type="Button" parent="." unique_id=1220174656]
 process_mode = 3
@@ -2797,13 +2799,13 @@ icon = ExtResource("1_nh2g7")
 [node name="npc car" parent="." unique_id=887401131 groups=["npc"] instance=ExtResource("3_6t6vt")]
 position = Vector2(396, 288)
 scale = Vector2(0.75, 0.75)
-skin = "cyan"
+skin = "grey"
 speed = 120.0
 
 [node name="npc car2" parent="." unique_id=1084196753 groups=["npc"] instance=ExtResource("3_6t6vt")]
 position = Vector2(56, 288)
 scale = Vector2(0.75, 0.75)
-skin = "purp"
+skin = "grey"
 speed = 200.0
 
 [node name="car" parent="." unique_id=100191730 node_paths=PackedStringArray("tilemap_layer") groups=["maincar"] instance=ExtResource("3_8pvo3")]
@@ -2839,6 +2841,7 @@ scale = Vector2(0.3, 0.3)
 process_mode = 3
 position = Vector2(1038, 280)
 scale = Vector2(0.3, 0.3)
+turn_road_x = 400.0
 
 [node name="Area2D2" type="Area2D" parent="turn" unique_id=1393683749]
 

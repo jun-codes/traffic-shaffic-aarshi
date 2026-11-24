@@ -19,18 +19,21 @@ const LEFT_OFFSCREEN_X := -90.0  # the player's car has U-turned and left the sc
 @onready var not_home: Node2D = $not_home
 
 var finished := false
+var reason := ""      # what went wrong, for the feedback on the failure screens
 
 func _ready() -> void:
 	Global.speed_mult = 1.0
 	Global.speed_limit_kmh = 50.0
 	Global.extra_road_rects.clear()
-	# Last level for now: the victory screen hides its "next level" button.
-	Global.next_level = ""
+	# The next level is the highway level.
+	Global.next_level = "res://scenes/Level4/level 4.tscn"
 	# Every failure goes through _fail so the right screen is chosen.
-	car.death.connect(_fail)
+	car.death.connect(func(): _crashed_into(car.last_hit))
 	for npc in get_tree().get_nodes_in_group("npc"):
 		if npc.has_signal("hit_player"):
-			npc.hit_player.connect(_fail)
+			npc.hit_player.connect(func(): _crashed_into(npc))
+		if npc.has_signal("crashed"):
+			npc.crashed.connect(_other_car_crashed)
 
 func _physics_process(_delta: float) -> void:
 	if finished or not Global.play:
@@ -39,16 +42,29 @@ func _physics_process(_delta: float) -> void:
 		# U-turned: nothing crashes, the car drives back off the left edge of the screen.
 		if car.global_position.x <= LEFT_OFFSCREEN_X:
 			finished = true
+			reason = "u_turn"
 			not_home._on_car_death()
 		return
 	if not car.turn_sig:
 		# Straight on: no crash at the end of the road, the car just keeps driving.
 		if car.global_position.x >= OFFSCREEN_X:
+			reason = "straight"
 			_fail()
 		return
 	# Turned, but off the road (too early or too late): it is on the grass.
-	var on_road := roads.get_cell_tile_data(roads.local_to_map(roads.to_local(car.global_position))) != null
+	# On the road = the whole car is on asphalt (tiles with a driving direction), not on the
+	# curb or the grass.
+	var on_road := true
+	for d in [Vector2.ZERO, Vector2(30, 0), Vector2(-30, 0), Vector2(0, 30), Vector2(0, -30)]:
+		if not _asphalt_at(car.global_position + d):
+			on_road = false
 	if not on_road:
+		if car.global_position.y < 270.0:         # went up: onto the grass at the top of the road
+			reason = "grass_up"
+		elif car.global_position.x < 350.0:
+			reason = "too_early"
+		else:
+			reason = "too_late"
 		_fail()
 
 func _fail() -> void:
@@ -59,3 +75,48 @@ func _fail() -> void:
 		not_home._on_car_death()     # drove on past the junction: did not reach home
 	else:
 		death._on_car_death()        # crashed
+
+func _asphalt_at(p: Vector2) -> bool:
+	var tile := roads.get_cell_tile_data(roads.local_to_map(roads.to_local(p)))
+	return tile != null and str(tile.get_custom_data("direction")).strip_edges() != ""
+
+# A crash between two cars: ours ran into one, or one ran into ours.
+func _crashed_into(other: Node) -> void:
+	if finished:
+		return
+	if car.u_turned:
+		reason = "u_turn_crash"
+	elif other != null and other.global_position.x < car.global_position.x:
+		reason = "hit_from_behind"      # the other car was behind ours
+	else:
+		reason = "hit_ahead"
+	# A collision is always a crash, even when the car had already driven past the side road.
+	finished = true
+	death._on_car_death()
+
+# --- Feedback on the failure screens ---------------------------------------------------
+func death_feedback() -> String:
+	match reason:
+		"other_crash":
+			return "Try finding a way to make everyone drive safely."
+		"hit_from_behind":
+			return "The reckless driver behind you was going faster than you and rear-ended you. Try again!"
+		"hit_ahead", "u_turn_crash":
+			return "You ran into the car in front of you."
+		"grass_up", "too_early", "too_late":
+			return "You crashed into the pavement. Try again."
+	return ""
+
+func not_home_feedback() -> String:
+	return "The car did not reach home. Try again."
+
+# One of the other cars crashed (into another car or off the road): the level is over.
+func _other_car_crashed() -> void:
+	if finished:
+		return
+	finished = true
+	reason = "other_crash"
+	death._on_car_death()
+
+func death_title() -> String:
+	return "A DIFFERENT CAR CRASHED!" if reason == "other_crash" else ""

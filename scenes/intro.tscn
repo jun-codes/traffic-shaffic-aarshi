@@ -54,6 +54,30 @@ theme_override_styles/hover = SubResource("StyleBoxEmpty_0a7ni")
 theme_override_styles/disabled = SubResource("StyleBoxEmpty_y72e6")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_u2rf6")
 
+[node name="CustomiseButton" type="Button" parent="."]
+offset_left = 417.0
+offset_top = 462.0
+offset_right = 732.0
+offset_bottom = 531.0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ayt76")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_7a8ye")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_0a7ni")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_y72e6")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_u2rf6")
+
+[connection signal="pressed" from="CustomiseButton" to="." method="_on_customise_pressed"]
+[node name="SettingsButton" type="Button" parent="."]
+offset_left = 417.0
+offset_top = 546.0
+offset_right = 732.0
+offset_bottom = 612.0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ayt76")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_7a8ye")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_0a7ni")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_y72e6")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_u2rf6")
+
+[connection signal="pressed" from="SettingsButton" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="ContinueButton" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="LevelsButton" to="." method="_on_levels_pressed"]
 [connection signal="pressed" from="Button" to="." method="_on_button_pressed"]

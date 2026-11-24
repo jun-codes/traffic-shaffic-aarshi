@@ -1,0 +1,50 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/Level4/highway_car.gd" id="1_2olqh"]
+[ext_resource type="Texture2D" uid="uid://bjjk2gbs0vubg" path="res://assets/carFrame1.png" id="2_6vg17"]
+[ext_resource type="Texture2D" uid="uid://dj0glysxnj14n" path="res://assets/car frame 2.png" id="3_iq8st"]
+[ext_resource type="Texture2D" uid="uid://5wdqsnvww5n1" path="res://assets/car frame 3.png" id="4_rwp13"]
+[ext_resource type="Texture2D" uid="uid://btk7lrjygn0gt" path="res://assets/car frame 4.png" id="5_6t6g0"]
+[ext_resource type="Texture2D" uid="uid://b5v0tjnktmqrm" path="res://assets/car frame 5.png" id="6_k8j5c"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_odilm"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_6vg17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_iq8st")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_rwp13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_6t6g0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_k8j5c")
+}],
+"loop": 0,
+"name": &"turn",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry0np"]
+size = Vector2(250, 172)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_odilm"]
+size = Vector2(183.5, 90)
+
+[node name="highway car" type="CharacterBody2D" unique_id=887401131]
+script = ExtResource("1_2olqh")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1426728232]
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_odilm")
+animation = &"turn"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1904942048]
+scale = Vector2(0.5, 0.5)
+shape = SubResource("RectangleShape2D_ry0np")
+

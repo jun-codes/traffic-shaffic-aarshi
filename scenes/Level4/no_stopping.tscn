@@ -1,0 +1,27 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/info_box.tscn" id="1_info"]
+[ext_resource type="Script" path="res://scripts/Level4/no_stopping.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://assets/no stopping or standing.png" id="3_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_sign"]
+radius = 112.0
+
+[node name="no_stopping" type="Node2D"]
+script = ExtResource("2_script")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_sign")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("3_tex")
+
+[node name="Label" parent="." instance=ExtResource("1_info")]
+title = "NO STOPPING OR STANDING"
+description = "Vehicles must not stop or stand here, even for a moment. Keep moving."
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]

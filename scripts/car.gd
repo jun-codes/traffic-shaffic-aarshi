@@ -11,6 +11,8 @@ extends CharacterBody2D
 
 @export var anim_look_offset: float = -35.0   # when the turn animation starts
 @export var turn_anim_speed: float = 3
+@export var smooth_turn_radius: float = 0.0   # > 0: the car drives round corners in an arc of this radius instead of turning sharply
+var heading: Vector2 = Vector2.ZERO
 var anim_played := false   # member variable
 var current_direction: Vector2 = Vector2.ZERO
 var last_cell := Vector2i(-999, -999)
@@ -32,6 +34,10 @@ func resume() -> void:
 
 func _ready() -> void:
 	pause.toggle_mode = true
+	# The colour chosen on the customise screen (red = the car as it is in the scene).
+	var skin: SpriteFrames = Global.car_frames()
+	if skin != null:
+		car.sprite_frames = skin
 	# The button must keep working while the tree is paused
 	pause.icon = load("res://assets/play.png")
 
@@ -57,7 +63,16 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	update_direction_from_tile()
 	if not turn_sig:
-			velocity = current_direction * minf(speed, Global.speed_cap_px()) * Global.speed_mult
+		var dir := current_direction
+		if smooth_turn_radius > 0.0 and dir != Vector2.ZERO:
+			# Round corners in an arc: the heading turns towards the road direction a little
+			# each frame instead of jumping.
+			if heading == Vector2.ZERO:
+				heading = dir
+			var step := minf(speed, Global.speed_cap_px()) * Global.speed_mult * _delta / smooth_turn_radius
+			heading = heading.rotated(clampf(heading.angle_to(dir), -step, step))
+			dir = heading
+		velocity = dir * minf(speed, Global.speed_cap_px()) * Global.speed_mult
 	move_and_slide()
 	_check_hit_npc()
 	
@@ -131,6 +146,7 @@ func _on_lvl_play():
 func _on_area_2d_body_entered(body):
 	if body.is_in_group('npc'):
 		print("woah")
+		last_hit = body
 		death.emit()
 
 
@@ -156,6 +172,7 @@ func stop_for(seconds: float) -> void:
 
 
 # Crash: the car's body touches an NPC (car or pedestrian), not only its crash area.
+var last_hit: Node = null     # what the car crashed into (used for the crash screen feedback)
 var hit_npc_sent := false
 
 func _check_hit_npc() -> void:
@@ -165,6 +182,7 @@ func _check_hit_npc() -> void:
 		var other := get_slide_collision(i).get_collider() as Node
 		if other != null and other.is_in_group("npc"):
 			hit_npc_sent = true
+			last_hit = other
 			death.emit()
 			return
 

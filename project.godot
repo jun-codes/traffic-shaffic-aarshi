@@ -11,20 +11,22 @@ config_version=5
 [application]
 
 config/name="traffic shaffic"
-run/main_scene="uid://cvhmui15kk1yl"
+run/main_scene="res://scenes/intro.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
+config/windows_native_icon="res://icon.ico"
 
 [autoload]
 
 Global="*uid://p7nsx8k23q8c"
 UiFx="*res://scripts/ui_fx.gd"
+Sfx="*res://scripts/sfx.gd"
+Music="*res://scripts/music.gd"
 
 [display]
 
 window/size/initial_position=Vector2i(576, 324)
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [global_group]
 

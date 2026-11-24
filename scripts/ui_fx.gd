@@ -17,8 +17,16 @@ func _on_node_added(n: Node) -> void:
 		return
 	if b.name != "pause":      # the pause button's cursor is handled by its icon in _process
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.pressed.connect(_clicked.bind(b))
 	b.mouse_entered.connect(_grow.bind(b, HOVER_SCALE))
 	b.mouse_exited.connect(_grow.bind(b, 1.0))
+
+# Click sound of a button. The play button is silent once the level is running (it can no
+# longer be pressed to do anything then).
+func _clicked(b: Button) -> void:
+	if b.name == "pause" and Global.play:
+		return
+	Sfx.play("click")
 
 func _grow(b: Button, s: float) -> void:
 	if b.name == "pause" or (b.text == "" and b.icon == null):

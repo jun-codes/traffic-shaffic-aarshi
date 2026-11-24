@@ -45,9 +45,9 @@ func _exit_tree() -> void:
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 func _on_button_pressed():
-	# New game wipes all saved progress.
+	# New game wipes all saved progress, then the tutorial explains the game (it ends in level 1).
 	Global.reset_progress()
-	Global.start_level(0)
+	get_tree().change_scene_to_file("res://scenes/tutorial.tscn")
 
 func _on_continue_pressed():
 	var i := Global.continue_index()
@@ -55,6 +55,12 @@ func _on_continue_pressed():
 		get_tree().change_scene_to_file("res://scenes/level_select.tscn")   # everything finished
 	else:
 		Global.start_level(i)
+
+func _on_settings_pressed():
+	get_tree().change_scene_to_file("res://scenes/settings.tscn")
+
+func _on_customise_pressed():
+	get_tree().change_scene_to_file("res://scenes/customise.tscn")
 
 func _on_levels_pressed():
 	get_tree().change_scene_to_file("res://scenes/level_select.tscn")

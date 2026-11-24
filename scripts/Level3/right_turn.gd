@@ -3,6 +3,7 @@ extends Node2D
 @onready var rt_sprite: Sprite2D = $Sprite2D
 
 signal right_turn
+@export var drag_rotation_degrees := 90.0   # the picture turns this much once picked up (0 = never)
 var is_dragging = false
 var draggable = false #changes depending on if mouse is inside body or not
 var offset: Vector2 #offset between global object position and mouse position
@@ -24,7 +25,7 @@ func _process(_delta):
 			offset = get_global_mouse_position() - global_position #calculates offset
 			is_dragging = true
 			label.visible = false
-			rt_sprite.rotation_degrees = 90
+			rt_sprite.rotation_degrees = drag_rotation_degrees
 	elif Global.drag_owner == self:
 		if Input.is_action_pressed("click"):
 			var fp := Global.area_footprint(self, $Area2D)
@@ -63,6 +64,9 @@ func _on_area_2d_mouse_exited():
 
 
 var turned: Array = []   # cars that already took the turn
+const CROSS_DISTANCE := 85.0    # a car turns only after it has completely crossed the sign (half a car + the sign)
+@export var turn_road_x := 0.0   # > 0: after crossing the sign the car keeps going until it is at the side road (this x), then turns
+var waiting: Array = []   # cars that saw the sign and are driving up to it
 const SIDEBAR_X := 933.0   # x where the sidebar starts
 
 # Every car (ours and the NPC cars) obeys the sign: it turns right where the sign is.
@@ -75,7 +79,24 @@ func _on_area_2d_2_body_entered(body: Node2D):
 	if body.global_position.x > global_position.x:
 		return
 	turned.append(body)
-	body._on_turn_right_turn()
-	if body.is_in_group('maincar'):
-		right_turn.emit()
+	waiting.append(body)              # first it has to drive past the sign
+
+# Where the cars turn: right after they have crossed the sign, but not before they reach the
+# side road (so a sign standing a bit before the road still turns the cars onto the road).
+func _turn_x() -> float:
+	var x := global_position.x + CROSS_DISTANCE
+	return maxf(x, turn_road_x) if turn_road_x > 0.0 else x
+
+# A car that saw the sign turns right only once it has crossed it.
+func _physics_process(_delta: float) -> void:
+	if not Global.play:
+		return
+	for b in waiting.duplicate():
+		if not is_instance_valid(b):
+			waiting.erase(b)
+		elif b.global_position.x >= _turn_x():
+			waiting.erase(b)
+			b._on_turn_right_turn()
+			if b.is_in_group("maincar"):
+				right_turn.emit()
 
