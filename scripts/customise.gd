@@ -7,6 +7,8 @@ const FONT := preload("res://assets/PixelOperator8-Bold.ttf")
 const TEAL := Color("0f6b66")
 const CREAM := Color("f5e6d3")
 const YELLOW := Color("ffd84a")
+const GREY := Color("8a8a8a")
+const GOLD := preload("res://assets/gold star.png")
 # The car of every colour, seen from above and facing up (the last frame of its animation).
 const PICTURES := {
 	"red": preload("res://assets/car frame 5.png"),
@@ -47,8 +49,11 @@ func _hover(pos: Vector2) -> int:
 	return -1
 
 func _choose(i: int) -> void:
-	Sfx.play("click")
 	focus = i
+	if not Global.skin_unlocked(Global.CAR_SKINS[i][0]):     # locked: needs more stars
+		queue_redraw()
+		return
+	Sfx.play("click")
 	Global.set_car_skin(Global.CAR_SKINS[i][0])
 	queue_redraw()
 
@@ -116,17 +121,30 @@ func _draw() -> void:
 		var id: String = Global.CAR_SKINS[i][0]
 		var r := rects[i].grow(6.0) if i == hover_i else rects[i]
 		var chosen: bool = id == Global.car_skin
-		draw_rect(r, CREAM)
-		draw_rect(r, TEAL, false, 6)
+		var open: bool = Global.skin_unlocked(id)
+		draw_rect(r, CREAM if open else GREY)
+		draw_rect(r, TEAL if open else Color("555555"), false, 6)
 		var swatch := Rect2(r.position.x + 22, r.position.y + (r.size.y - 52) / 2.0, 52, 52)
-		draw_rect(swatch, SWATCH[id])
-		draw_rect(swatch, TEAL, false, 4)
-		_left(Global.CAR_SKINS[i][1], Rect2(r.position.x + 100, r.position.y, 200, r.size.y), 26, TEAL)
+		draw_rect(swatch, SWATCH[id] if open else Color("6b6b6b"))
+		draw_rect(swatch, TEAL if open else Color("555555"), false, 4)
+		_left(Global.CAR_SKINS[i][1], Rect2(r.position.x + 100, r.position.y, 200, r.size.y), 26, TEAL if open else Color("555555"))
+		if not open:                              # what it costs: the number of stars, with the star picture
+			var need := str(Global.SKIN_STARS[id])
+			var w := FONT.get_string_size(need, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+			var star_y := r.position.y + (r.size.y - 40.0) / 2.0
+			# same proportions as the counter in the top right: the number sits 0.84 star-heights below the star top
+			draw_string(FONT, Vector2(r.end.x - 52 - w - 14, star_y + 34.0), need, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color("555555"))
+			draw_texture_rect(GOLD, Rect2(r.end.x - 56, star_y, 40, 40), false)
 		if chosen:
 			_left("IN USE", Rect2(r.position.x + 296, r.position.y, 100, r.size.y), 14, Color("1c8a5a"))
 			draw_rect(r.grow(10), YELLOW, false, 6)
 		elif i == focus:
 			draw_rect(r.grow(10), Color(YELLOW.r, YELLOW.g, YELLOW.b, 0.55), false, 4)
+	# The stars earned so far (top right).
+	var total := str(Global.total_stars())
+	var tw := FONT.get_string_size(total, HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x
+	draw_string(FONT, Vector2(1112 - 48 - tw - 12, 59), total, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, CREAM)
+	draw_texture_rect(GOLD, Rect2(1112 - 48, 22, 44, 44), false)
 	var br := _back_rect().grow(4.0) if hover_back else _back_rect()
 	draw_rect(br, CREAM)
 	draw_rect(br, TEAL, false, 4)

@@ -12,6 +12,7 @@ var frozen := false
 
 func _ready():
 	label.visible = false
+	(load("res://scripts/click_outline.gd") as GDScript).attach(self)               # a white border: this placed sign can be clicked
 	if inarea:
 		scale /= Vector2(1.12, 1.12)
 	inarea = false

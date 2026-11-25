@@ -32,6 +32,8 @@ const STALL_CAR_X := 2000.0
 const STALL_X := 170.0
 const WAIT_X := 300.0          # a car left of this has already passed the junction
 const U_RADIUS := 28.0
+const ROADS := [Rect2(-20, 200, 960, 180), Rect2(320, 330, 175, 350)]   # the highway and the side road (with their curbs): the turn signs snap to the nearest one
+const TURN_NPC_SPEED := 150.0  # the highway cars slow down to this when a turn sign sends them round a corner
 
 @onready var car: CharacterBody2D = $car
 @onready var roads: TileMapLayer = $Roads
@@ -51,6 +53,7 @@ var merge_speed := CRUISE
 var theta := 0.0
 var turn_kind := ""            # right / uturn1 / uturn2 : which arc the car is driving
 var turn_speed := CRUISE
+var merge_radius := 45.0          # radius of the turn onto the highway: it ends exactly in the middle of the lane going left
 var hold := 0.0                # seconds the car still has to stand (stop sign / traffic signal)
 var seen: Array = []           # signs our car already obeyed
 var finished := false
@@ -62,7 +65,7 @@ func _ready() -> void:
 	Global.speed_mult = 1.0
 	Global.speed_limit_kmh = 50.0
 	Global.extra_road_rects.clear()
-	Global.next_level = "res://scenes/Level5/level 5.tscn"
+	Global.next_level = Global.next_path_after(scene_file_path)
 	car.turn_sig = true                          # this script drives the car, not the road tiles
 	car.scale = Vector2.ONE * CAR_SCALE
 	car.global_position = Vector2(LANE_X, START_Y)
@@ -88,7 +91,7 @@ func _ready() -> void:
 	var skins := ["grey", "grey", "grey", "grey"]
 	for i in WEST_CARS.size():
 		_spawn(WEST_CARS[i], WEST_LANE_Y, Vector2.LEFT, WEST_SPEED, skins[i])
-	var stall := _spawn(STALL_CAR_X, WEST_LANE_Y, Vector2.LEFT, WEST_SPEED, "grey")
+	var stall := _spawn(STALL_CAR_X, WEST_LANE_Y, Vector2.LEFT, WEST_SPEED, "reckless")
 	stall.stalls = true
 	stall.stall_x = STALL_X
 	_spawn(120.0, EAST_LANE_Y, Vector2.RIGHT, EAST_SPEED, "grey")
@@ -128,6 +131,7 @@ func _physics_process(delta: float) -> void:
 	if finished or not Global.play:
 		return
 	_eastbound_traffic(delta)
+	_npc_turn_signs()
 	match state:
 		"drive":
 			_check_signs()
@@ -166,6 +170,32 @@ func _eastbound_traffic(delta: float) -> void:
 		east_timer = 0.8 + 0.5 * float((spawn_count * 7) % 3)
 		_spawn(-70.0, EAST_LANE_Y, Vector2.RIGHT, EAST_SPEED, "grey")
 
+# The turn signs snap to a road (see Global.sign_heading): this level's roads.
+func sign_roads() -> Array:
+	return ROADS
+
+# The compulsory turn signs act on the cars of the road they snap to (the highway cars too): a car driving the
+# way the sign points turns once it has completely crossed it (onto the side road, or off the road = a crash).
+func _npc_turn_signs() -> void:
+	for s in [left_sign, right_sign]:
+		if s.global_position.x >= 933.0:
+			continue
+		for c in get_tree().get_nodes_in_group("npc"):
+			if not (c is CharacterBody2D and "direction" in c and c.has_method("start_turn")) or c.turning or c.get_meta("sign_turned", false):
+				continue
+			if Global.turn_sign_reached(s.global_position, c.global_position, c.direction, ROADS):
+				c.set_meta("sign_turned", true)
+				var v := minf(c.speed, TURN_NPC_SPEED)
+				var to: Vector2 = c.direction.rotated(-PI / 2.0 if s == left_sign else PI / 2.0)
+				c.start_turn(Vector2(roundf(to.x), roundf(to.y)), _arc_radius(v), v)
+		# A highway car that was sent round a corner has to stay on the asphalt.
+	for c in get_tree().get_nodes_in_group("npc"):
+		if c is CharacterBody2D and c.get_meta("sign_turned", false) and not c.crash_sent:
+			var p: Vector2 = c.global_position
+			if p.x > -60.0 and p.x < 940.0 and p.y > -60.0 and p.y < 660.0 and roads.get_cell_tile_data(roads.local_to_map(roads.to_local(p))) == null:
+				c.crash_sent = true
+				_other_car_crashed()
+
 func _arc_radius(v: float) -> float:
 	return 2.0 * v * MERGE_TIME / PI
 
@@ -175,12 +205,16 @@ func _check_signs() -> void:
 		if s in seen or s.global_position.x >= 933.0:
 			continue
 		var p: Vector2 = s.global_position
-		if absf(p.x - LANE_X) > SIGN_REACH or p.y < WEST_LANE_Y + 50.0:
-			continue
-		# The compulsory turns are only obeyed once the car has completely crossed the sign.
-		var cross := 75.0 if (s == left_sign or s == right_sign) else -12.0
-		if car.global_position.y > p.y - cross:   # our car has not reached / crossed the sign yet
-			continue
+		if s == left_sign or s == right_sign:
+			# Compulsory turns snap to a road: they act on the cars of that road driving the way the sign points,
+			# once the car has completely crossed the sign.
+			if not Global.turn_sign_reached(p, car.global_position, Vector2.UP, ROADS):
+				continue
+		else:
+			if absf(p.x - LANE_X) > SIGN_REACH or p.y < WEST_LANE_Y + 50.0:
+				continue
+			if car.global_position.y > p.y + 12.0:   # our car has not reached the sign yet
+				continue
 		seen.append(s)
 		if s == stop_sign:
 			hold = STOP_SECONDS
@@ -219,11 +253,12 @@ func _drive() -> void:
 		speed = clampf(dist * 3.0, 40.0, CRUISE)
 		merge_speed = SLOW
 	else:
+		# No give way sign: the car does not try to turn onto the highway, it just drives straight on
+		# (into the traffic, or off the road at the other side). Only a compulsory left turn makes it turn.
 		speed = CRUISE
 		merge_speed = CRUISE
-		if y <= WEST_LANE_Y + _arc_radius(merge_speed):
-			_begin_merge()
-			return
+		if y < 400.0:
+			_check_on_road()
 	car.velocity = Vector2(0, -speed)
 
 func _wait() -> void:
@@ -240,14 +275,17 @@ func _creep() -> void:
 func _begin_merge() -> void:
 	state = "merge"
 	theta = 0.0
+	# The turn is as wide as it has to be so that the car lands in the middle of the lane going left, wherever
+	# the turn starts (a compulsory left turn sign a little too early or too late still works).
+	merge_radius = clampf(car.global_position.y - WEST_LANE_Y, 35.0, 140.0)
 	car.car.rotation_degrees = -90.0              # the "turn" animation, turning from up to left
 	car.car.flip_h = false
 	car.car.stop()
 	car.car.frame = 0                             # start the turn animation from its first frame
-	car.car.play("turn", 1.0 / MERGE_TIME)
+	car.car.play("turn", merge_speed / (PI / 2.0 * merge_radius))
 
 func _merge(delta: float) -> void:
-	var w := (PI / 2.0) / MERGE_TIME
+	var w := merge_speed / merge_radius
 	theta = minf(theta + w * delta, PI / 2.0)
 	car.velocity = Vector2(-sin(theta), -cos(theta)) * merge_speed
 	_set_hitbox_angle(PI / 2.0 * (1.0 - theta / (PI / 2.0)))
@@ -328,12 +366,12 @@ func _fail() -> void:
 func _crashed_into(other: Node) -> void:
 	if finished:
 		return
-	if right_sign in seen:
+	if other != null and "stopped" in other and other.stopped:
+		reason = "stalled_car"
+	elif right_sign in seen:
 		reason = "right_traffic"
 	elif left_sign in seen:
 		reason = "left_traffic"
-	elif other != null and "stopped" in other and other.stopped:
-		reason = "stalled_car"
 	else:
 		reason = "traffic"
 	_fail()
@@ -350,8 +388,8 @@ func death_feedback() -> String:
 		"stalled_car":
 			var nostop: Node2D = $no_stopping
 			if nostop.global_position.x >= 933.0:
-				return "The car ahead stopped in the lane and you ran into it."
-			return "The No Stopping sign needs to be closer to the car that stops."
+				return "The reckless driver ahead stopped in the lane and you ran into it."
+			return "The No Stopping sign needs to be closer to the reckless driver who stops."
 		"left_traffic", "right_traffic":
 			return "You ran into the fast traffic. Try again."
 		"left_off", "right_off", "off_road":

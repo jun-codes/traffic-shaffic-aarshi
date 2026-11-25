@@ -14,6 +14,7 @@ size = Vector2(20, 866)
 script = ExtResource("2_script")
 car_method = &"_on_turn_left_turn"
 cross_distance = 85.0
+road_turn = true
 
 [node name="Area2D" type="Area2D" parent="."]
 

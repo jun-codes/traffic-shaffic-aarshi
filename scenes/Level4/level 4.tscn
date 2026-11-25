@@ -2834,7 +2834,6 @@ position = Vector2(988, 180)
 process_mode = 3
 position = Vector2(1088, 180)
 scale = Vector2(0.3, 0.3)
-drag_rotation_degrees = 0.0
 
 [node name="Area2D2" type="Area2D" parent="turn"]
 
@@ -2846,13 +2845,11 @@ shape = SubResource("RectangleShape2D_turnray")
 process_mode = 3
 position = Vector2(1088, 280)
 scale = Vector2(0.3, 0.3)
-drag_rotation_degrees = 0.0
 
 [node name="u_turn" parent="." instance=ExtResource("101_uturn")]
 process_mode = 3
 position = Vector2(988, 380)
 scale = Vector2(0.3, 0.3)
-drag_rotation_degrees = 0.0
 
 [node name="stop" parent="." instance=ExtResource("9_6uqlr")]
 process_mode = 3

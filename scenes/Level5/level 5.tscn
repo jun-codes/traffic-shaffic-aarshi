@@ -2914,7 +2914,7 @@ tile_map_data = PackedByteArray("AAD+/xAABgAiAA4AAAD+/xEABgAiAA8AAAD+/xIABgAiABA
 tile_set = SubResource("TileSet_nqat1")
 
 [node name="FinishLine" type="Area2D" parent="." unique_id=1352137853]
-position = Vector2(850, 290)
+position = Vector2(880, 290)
 script = ExtResource("4_achfp")
 sprite_scale = 0.27
 
@@ -2933,7 +2933,7 @@ toggle_mode = true
 icon = ExtResource("5_6yerc")
 
 [node name="Cow" type="CharacterBody2D" parent="." unique_id=181664507]
-position = Vector2(760, 350)
+position = Vector2(830, 350)
 script = ExtResource("6_b2yb8")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Cow" unique_id=1830141301]

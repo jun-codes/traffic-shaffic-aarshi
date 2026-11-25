@@ -1,0 +1,54 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/info_box.tscn" id="99_infobox"]
+[ext_resource type="Script" path="res://scripts/Zip1/timed_signal.gd" id="1_ts"]
+[ext_resource type="Texture2D" path="res://assets/traffic red light.png" id="2_red"]
+[ext_resource type="Texture2D" path="res://assets/traffic green light.png" id="4_green"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_a"]
+size = Vector2(533.3334, 1429.7002)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_red"]
+atlas = ExtResource("2_red")
+region = Rect2(0, 0, 209, 608)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_green"]
+atlas = ExtResource("4_green")
+region = Rect2(0, 0, 208, 611)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_a"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_red")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_green")
+}],
+"loop": false,
+"name": &"traffic",
+"speed": 2.0
+}]
+
+[node name="timed_signal" type="Node2D"]
+scale = Vector2(0.12, 0.12)
+script = ExtResource("1_ts")
+
+[node name="Area2D" type="Area2D" parent="."]
+scale = Vector2(0.4, 0.4)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(16.666685, 29.166666)
+scale = Vector2(0.9999998, 1.0549997)
+shape = SubResource("RectangleShape2D_a")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_a")
+animation = &"traffic"
+
+[node name="Label" parent="." instance=ExtResource("99_infobox")]
+title = "TRAFFIC SIGNAL"
+description = "Red means stop, green means go. Controls the movement of vehicles."
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]

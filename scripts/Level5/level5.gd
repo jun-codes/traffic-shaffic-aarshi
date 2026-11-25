@@ -36,17 +36,21 @@ const DOWN_SPEED := 150.0      # px/s going down the right half and along the la
 const TURN_TIME := 0.7         # seconds a quarter turn takes (the radius follows the speed)
 const U_RADIUS := 60.0         # radius of the two quarter turns of the U-turn
 const WAIT_Y := 300.0          # a car above this y has already passed the junction
+const TOO_FAR_TEXT := "The sign was too far from the cow for the car to react to it. Try again!"
 const STOP_SECONDS := 3.0      # the wait at the cattle sign: stop sign time + traffic signal time
 
 # --- where the signs count ---
 const GIVE_WAY_RANGE := 300.0  # the give way sign must be this close to the junction (west of it)
 const ONE_WAY_RECT := Rect2(0, 0, 215, 290)           # the top left, next to the road
 const DIVIDER_X := Vector2(365.0, 455.0)              # the divider (x range)
+const U_SIGN_LEEWAY := 40.0                           # the U-turn sign may stand at most 2 grid boxes below the highest spot of the divider where it can be placed
+var u_sign_max_y := 300.0                              # (worked out in _ready from the map)
 const LEFT_SIGN_X := Vector2(605.0, 825.0)            # top right, right of the road going down
-const CATTLE_X := Vector2(640.0, 720.0)               # beside the last road, before the cow
+const CATTLE_X := Vector2(640.0, 790.0)               # beside the last road, before the cow
 const CROSS_DISTANCE := 75.0   # a car turns once it has completely crossed the sign
 const SIGN_REACH := 150.0     # a stop sign / traffic signal / right turn this close (sideways) to a car is seen by it
 const SIGN_STOP_SECONDS := 1.5
+const COW_SEE_RANGE := 200.0        # the cow notices a car that stops this close to it and starts to walk off the road
 const NPC_SIGN_REACH := 100.0 # the other cars only see a stop sign / traffic signal right beside their road
 const NPC_TURN_REACH := 150.0 # ... and a compulsory turn sign is seen by every car this close to it, like our car
 const TURN_SPEED := 150.0       # the other cars slow down to this when a turn sign sends them round a corner
@@ -95,10 +99,11 @@ var free_heading := Vector2.RIGHT   # after a compulsory right turn the car just
 var free_speed := 0.0
 
 func _ready() -> void:
+	_find_u_sign_limit()
 	Global.speed_mult = 1.0
 	Global.speed_limit_kmh = 50.0
 	Global.extra_road_rects.clear()
-	Global.next_level = ""                       # last level for now
+	Global.next_level = Global.next_path_after(scene_file_path)   # "" for the last level
 	car.turn_sig = true                          # this script drives the car, not the road tiles
 	car.scale = Vector2.ONE * CAR_SCALE
 	car.global_position = Vector2(60.0, ARM_Y)
@@ -124,21 +129,15 @@ func _ready() -> void:
 		_spawn(NB_X, y, Vector2.UP, 450.0)
 	for y in [380.0, 980.0, 1380.0]:
 		_spawn(NB2_X, y, Vector2.UP, 450.0)
-	# Traffic on the right half (drives down), already gone by the time the car gets there.
-	# Both lanes have traffic. The cars of the lane next to the turn (SB_X) obey a compulsory left turn
-	# (and so turn onto the cattle road); the ones in the other lane drive straight on. There is only
-	# one car in that lane: a second one would run into it while it waits at the cattle sign.
-	for y in [-60.0, -330.0, -630.0]:
-		_spawn(SB_W_X, y, Vector2.DOWN, 400.0)
-	_spawn(SB_X, -180.0, Vector2.DOWN, 400.0)
+	# (There is no traffic on the right half: nobody comes down it.)
 
-func _spawn(x: float, y: float, dir: Vector2, spd: float) -> Node:
+func _spawn(x: float, y: float, dir: Vector2, spd: float, skin := "grey") -> Node:
 	var c: CharacterBody2D = HIGHWAY_CAR.instantiate()
 	c.position = Vector2(x, y)
 	c.scale = Vector2.ONE * CAR_SCALE
 	c.direction = dir
 	c.speed = spd
-	c.skin = "grey"
+	c.skin = skin
 	c.hit_player.connect(_crashed_into.bind(c))
 	c.crashed.connect(_other_car_crashed)
 	add_child(c)
@@ -150,6 +149,15 @@ func _set_hitbox_angle(a: float) -> void:
 	car.get_node("Area2D").rotation = a
 
 # --- where the signs stand -------------------------------------------------------------------
+# The highest spot of the divider (middle, just below the gap) where the U-turn sign can stand without touching the
+# road, plus the leeway: a sign lower down than that does nothing.
+func _find_u_sign_limit() -> void:
+	var fp: Array = Global.area_footprint(u_sign, u_sign.get_node("Area2D"))
+	var y := GAP_Y
+	while y < 600.0 and Global.footprint_on_road(Vector2((DIVIDER_X.x + DIVIDER_X.y) / 2.0, y), fp[0], fp[1]):
+		y += 1.0
+	u_sign_max_y = y + U_SIGN_LEEWAY
+
 func _placed(s: Node2D) -> bool:
 	return s.global_position.x < 933.0
 
@@ -162,7 +170,7 @@ func _one_way_ok() -> bool:
 
 func _u_turn_ok() -> bool:
 	var p := u_sign.global_position
-	return _placed(u_sign) and p.x >= DIVIDER_X.x and p.x <= DIVIDER_X.y
+	return _placed(u_sign) and p.x >= DIVIDER_X.x and p.x <= DIVIDER_X.y and p.y <= u_sign_max_y
 
 # The U-turn sign stands on the divider south of the gap: the car turns through the gap. A sign
 # on the divider north of the gap is too late: the car turns where it sees it (into the divider).
@@ -300,7 +308,7 @@ func _arrived(next: String) -> void:
 			north_start_y = car.global_position.y
 			if not _one_way_ok() and not wrong_way_sent:
 				wrong_way_sent = true        # a car comes down our lane the wrong way
-				_spawn(NB_X, -90.0, Vector2.DOWN, 250.0)
+				_spawn(NB_X, -90.0, Vector2.DOWN, 250.0, "reckless")      # the reckless driver coming down our lane the wrong way
 		"arm":
 			pass
 
@@ -343,7 +351,9 @@ func _arm() -> void:
 # --- crashes and endings ---------------------------------------------------------------------
 func _check_on_road() -> void:
 	var p := car.global_position
-	if p.y < -60.0 or p.y > 660.0:
+	# Driving straight up off the top of the screen is not a crash (it just did not get home); a car in the middle of
+	# a U-turn is checked all the way (a U-turn sign north of the gap sends it into the divider).
+	if p.y < (-60.0 if uturning else 30.0) or p.y > 660.0:
 		return
 	for d in [Vector2.ZERO, Vector2(20, 0), Vector2(-20, 0), Vector2(0, 20), Vector2(0, -20)]:
 		if not _asphalt_at(p + d):
@@ -387,6 +397,8 @@ func death_title() -> String:
 func death_feedback() -> String:
 	match reason:
 		"other_crash":
+			if _placed(cattle_sign) and not _cattle_ok():
+				return TOO_FAR_TEXT
 			return "Try finding a way to make everyone drive safely."
 		"traffic":
 			if not _placed(give_way):
@@ -394,17 +406,21 @@ func death_feedback() -> String:
 			return "The Give Way sign needs to be close to the junction, before the car reaches the traffic."
 		"wrong_way":
 			if not _placed(one_way):
-				return "A car drove down your lane the wrong way."
+				return "A reckless driver drove down your lane the wrong way."
 			return "The One Way sign needs to be at the top left, next to the road."
 		"divider":
 			return "You crashed into the divider. Try again."
 		"pavement":
 			return "You crashed into the pavement. Try again."
 		"cow":
+			if _placed(cattle_sign) and not _cattle_ok():
+				return TOO_FAR_TEXT
 			return "Try not to hit the cow. Try again!"
 	return ""
 
 func not_home_feedback() -> String:
+	if _placed(u_sign) and not _u_turn_ok():      # a U-turn sign stands on the road but not where the car reacts to it
+		return "The sign was too far from the turn for the car to react to it. Try again!"
 	return "The car did not reach home. Try again."
 
 # --- is this point on the road? ---------------------------------------------------------------
@@ -458,16 +474,20 @@ func _state_speed() -> float:
 func _check_player_signs() -> void:
 	var h := _player_heading()
 	var p := car.global_position
+		# A stop sign / traffic signal belongs to the ONE road it snapped to (and one direction of it): it only stops
+	# the cars on that road (see SIGN_RULES.md).
 	for s in [stop_sign, light]:
 		if s in seen or not _placed(s):
 			continue
-		var rel: Vector2 = p - s.global_position
-		if absf(rel.dot(h.rotated(PI / 2.0))) > SIGN_REACH:
+		if not Global.car_on_sign_road(s.global_position, SIGN_ROADS, p, h):
 			continue
-		var d := rel.dot(h)                      # how far the car is past the sign
+		var d: float = (p - s.global_position).dot(h)     # how far the car is past the sign
 		if d >= -12.0 and d <= 40.0:
 			seen.append(s)
+			if not Global.sign_stops_heading(s, h):
+				continue
 			hold = SIGN_STOP_SECONDS
+			_cow_sees_stop(car.global_position)
 			if s == light:
 				_run_light()
 			return
@@ -486,6 +506,13 @@ func _check_player_signs() -> void:
 			if d3 >= CROSS_DISTANCE and d3 <= CROSS_DISTANCE + 40.0:
 				seen.append(left_sign)
 				_turn_left(h)
+
+# A car that stops near the cow (a stop sign or a traffic signal in front of it, not only the CATTLE AHEAD sign) is
+# noticed by the cow: it starts to walk off the road, but very slowly: it needs about 2.5 s to be clear, so one stop
+# (1.5 s) is not enough, a stop sign AND a traffic signal (3 s) are.
+func _cow_sees_stop(p: Vector2) -> void:
+	if not cow.started and cow.global_position.distance_to(p) <= COW_SEE_RANGE:
+		cow.start_walking()
 
 func _turn_right(h: Vector2) -> void:
 	# The four directions are compared by hand: a rotated vector can come out as (-0.0, 1.0),
@@ -557,6 +584,7 @@ func _other_cars_obey_signs() -> void:
 				done.append(s)
 				c.set_meta("seen_signs", done)
 				c.stop_for(SIGN_STOP_SECONDS)
+				_cow_sees_stop(c.global_position)
 				if s == light:
 					_run_light()
 		# The compulsory turns: every car that comes up to one (and is close enough to it) turns
@@ -631,3 +659,15 @@ func _in_turn_lane(c: Node, left: bool) -> bool:
 	var side := h.rotated(-PI / 2.0 if left else PI / 2.0)
 	var center := NB_CENTER if c.global_position.x < 420.0 else SB_CENTER
 	return (c.global_position.x - center) * side.x > 0.0
+
+# --- Turn signs snap to a road and point the way the traffic goes there (see Global.sign_heading) ---
+# (Only the picture's rotation is road-based here; what the signs do is still decided by this script.)
+# The road across (two-way), the left half of the dual carriageway (cars drive up) and the right half (cars drive down).
+const SIGN_ROADS := [Rect2(-20, 260, 960, 180), Rect2(185, -130, 180, 910), Rect2(455, -130, 180, 910)]
+const SIGN_ROAD_DIRS := [Vector2.ZERO, Vector2.UP, Vector2.DOWN]
+
+func sign_roads() -> Array:
+	return SIGN_ROADS
+
+func sign_road_dirs() -> Array:
+	return SIGN_ROAD_DIRS

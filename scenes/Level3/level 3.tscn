@@ -2805,7 +2805,7 @@ speed = 120.0
 [node name="npc car2" parent="." unique_id=1084196753 groups=["npc"] instance=ExtResource("3_6t6vt")]
 position = Vector2(56, 288)
 scale = Vector2(0.75, 0.75)
-skin = "grey"
+skin = "reckless"
 speed = 200.0
 
 [node name="car" parent="." unique_id=100191730 node_paths=PackedStringArray("tilemap_layer") groups=["maincar"] instance=ExtResource("3_8pvo3")]
@@ -2834,7 +2834,7 @@ position = Vector2(1038, 180)
 
 [node name="speed_limit_30" parent="." unique_id=1562302633 instance=ExtResource("5_fipli")]
 process_mode = 3
-position = Vector2(302, 160)
+position = Vector2(700, 160)
 scale = Vector2(0.3, 0.3)
 
 [node name="turn" parent="." unique_id=873896466 instance=ExtResource("4_qql8j")]

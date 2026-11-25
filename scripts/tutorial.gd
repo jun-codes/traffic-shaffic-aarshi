@@ -37,7 +37,7 @@ const T_PED := preload("res://assets/npcs/red_front.png")
 # Each slide: title, what the car says, and which picture to draw.
 const SLIDES := [
 	{"title": "WELCOME!", "pic": "car",
-	 "text": "Hi! I'm your car. I know where home is, but I can't read the road. That's where you come in. Let me show you how this works."},
+	 "text": "Hi! I'm your car. I want to go home, but there are obstacles in my way. That's where you come in. Let me show you how this works."},
 	{"title": "YOUR CAR", "pic": "colours",
 	 "text": "I am the {COLOR} car, and I need to get home. All the other cars on the road are grey. Look out for them!"},
 	{"title": "GET HOME", "pic": "finish",

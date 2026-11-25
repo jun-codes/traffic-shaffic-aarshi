@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 
 ## Car colour. "default" keeps the colour set in npc_car.tscn.
-@export_enum("default", "cyan", "purp", "grey") var skin: String = "default"
+@export_enum("default", "cyan", "purp", "grey", "reckless") var skin: String = "default"
 @export var tilemap_layer: TileMapLayer
 @export var speed: float = 120
 @export var tile_size: float = 20.0

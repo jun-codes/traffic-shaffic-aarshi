@@ -21,7 +21,7 @@ texture = ExtResource("3_tex")
 
 [node name="Label" parent="." instance=ExtResource("1_info")]
 title = "GIVE WAY"
-description = "Slow down and let traffic on the main road pass before you join it."
+description = "Slow down and let traffic on the main road pass before you join the directional flow of traffic."
 
 [connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
 [connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]

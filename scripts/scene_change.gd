@@ -15,6 +15,7 @@ func _on_btm_pressed():
 	get_tree().change_scene_to_file("res://scenes/intro.tscn")
 
 func _on_restart_level_pressed():
+	Global.skip_sign_intro = true
 	get_tree().paused = false
 	Global.play = false
 	Global.safe = false
@@ -30,13 +31,29 @@ func _on_next_level_pressed():
 	Global.speed_limit_kmh = 50.0
 	get_tree().change_scene_to_file(Global.next_level)
 
+# Once one of the end screens (crash / did not reach home / you did it) is showing, no other one may replace it:
+# a car that makes it home after another car crashed does not win, and so on.
+func _another_screen_is_showing() -> bool:
+	var level := get_parent()
+	if level == null:
+		return false
+	for n in ["death", "not_home", "victory"]:
+		var screen := level.get_node_or_null(n) as CanvasItem
+		if screen != null and screen != self and screen.visible:
+			return true
+	return false
+
 func _on_car_death():
+	if visible or _another_screen_is_showing():
+		return
 	Sfx.play("sad" if name == "not_home" else "crash")
 	_show_feedback()
 	death.show()
 	get_tree().paused = true
 	
 func _on_car_victory() -> void:
+	if visible or _another_screen_is_showing():
+		return
 	Sfx.play("victory")
 	var stars := Global.stars_for(Global.items_used(), Global.PAR[maxi(Global.LEVEL_PATHS.find(get_tree().current_scene.scene_file_path), 0)])
 	Global.complete_level(get_tree().current_scene.scene_file_path, stars)

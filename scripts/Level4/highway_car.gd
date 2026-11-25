@@ -3,7 +3,7 @@
 # the road unless a no-stopping-or-standing sign stands next to it.
 extends CharacterBody2D
 
-@export_enum("default", "cyan", "purp", "grey") var skin: String = "default"
+@export_enum("default", "cyan", "purp", "grey", "reckless") var skin: String = "default"
 @export var speed: float = 500.0
 @export var direction: Vector2 = Vector2.LEFT
 @export var stalls := false           # brakes to a stop at stall_x (unless the sign is there)
@@ -109,6 +109,10 @@ func start_turn(new_dir: Vector2, radius: float, new_speed := -1.0) -> void:
 		return
 	if new_speed > 0.0:
 		speed = new_speed                # the car slows down for the turn
+	if not art_up and new_dir.y != 0.0:      # a car on a horizontal road turns onto a vertical one: draw it facing up and rotate it
+		art_up = true
+		car.frame = 4
+		car.flip_h = false
 	turning = true
 	turn_from = direction
 	turn_to = new_dir

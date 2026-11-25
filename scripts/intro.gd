@@ -12,12 +12,32 @@ const MENU_RECTS := [
 const HOVER_SCALE := 1.08
 
 var overlays: Array[Sprite2D] = []
+const BOOK := preload("res://assets/book icon.png")
+const BOOK_RECT := Rect2(1018, 528, 96, 96)      # the encyclopedia button, bottom right
+var book_hover := false
+var book_button: Button
 
 func _ready() -> void:
 	# Safety net: never arrive at the menu with the game still paused.
 	get_tree().paused = false
 	for b in find_children("*", "Button", false):
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	# The encyclopedia: a book icon in the bottom right corner.
+	book_button = Button.new()
+	book_button.flat = true
+	book_button.position = BOOK_RECT.position
+	book_button.size = BOOK_RECT.size
+	book_button.focus_mode = Control.FOCUS_NONE
+	book_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	book_button.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/encyclopedia.tscn"))
+	add_child(book_button)
+	var book := Sprite2D.new()
+	book.name = "BookIcon"
+	book.texture = BOOK
+	book.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	book.scale = Vector2(3.0, 3.0)
+	book.position = BOOK_RECT.get_center()
+	add_child(book)
 	var tex: Texture2D = $Sprite2D.texture
 	for r in MENU_RECTS:
 		var s := Sprite2D.new()
@@ -39,6 +59,12 @@ func _process(_delta: float) -> void:
 		var target := 0.6 * (HOVER_SCALE if hot else 1.0)
 		overlays[i].visible = hot
 		overlays[i].scale = overlays[i].scale.lerp(Vector2(target, target), 0.4)
+	var book_hot := BOOK_RECT.has_point(mouse)
+	var book_sprite := get_node_or_null("BookIcon") as Sprite2D
+	if book_sprite != null:
+		var bs := 3.0 * (1.12 if book_hot else 1.0)
+		book_sprite.scale = book_sprite.scale.lerp(Vector2(bs, bs), 0.4)
+	over = over or book_hot
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND if over else Input.CURSOR_ARROW)
 
 func _exit_tree() -> void:

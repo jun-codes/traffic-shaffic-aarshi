@@ -6,6 +6,7 @@ extends Node2D
 
 @export var car_method: StringName = &"_on_turn_left_turn"   # what a car does at this sign
 @export var drag_rotation_degrees := 90.0                    # the picture turns this much once picked up
+@export var road_turn := false   # a compulsory turn sign: snaps flush to a road and points the way the traffic goes there
 @export var cross_distance := 0.0   # the car must drive this far past the sign before it reacts (0 = right away)
 
 @onready var label: Label = $Label
@@ -23,6 +24,8 @@ func _ready():
 	sprite.rotation_degrees = 0
 
 func _process(_delta):
+	if road_turn and not Global.level_roads().is_empty():
+		sprite.rotation_degrees = Global.turn_sign_degrees(self)
 	if not is_instance_valid(Global.drag_owner):
 		Global.drag_owner = null
 	if Global.drag_owner == null:
@@ -35,7 +38,7 @@ func _process(_delta):
 	elif Global.drag_owner == self:
 		if Input.is_action_pressed("click"):
 			var fp := Global.area_footprint(self, $Area2D)
-			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1])
+			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1], road_turn)
 		else:
 			_end_drag()
 

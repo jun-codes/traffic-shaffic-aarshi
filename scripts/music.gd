@@ -1,6 +1,6 @@
 # Autoload: the background music. It looks at the scene that is open and plays the matching track:
 #   menus (intro screen, tutorial, level picker, customise, settings) -> intro music
-#   levels 1-4                                                          -> normal level music
+#   every level except the boss level (Level1-4, Zip1, Zip2 ...)                                                        -> normal level music
 #   level 5                                                              -> boss level music
 # The same track keeps playing across scenes (for example from one level to the next).
 extends Node
@@ -39,7 +39,7 @@ func apply_volume() -> void:
 func _track_for(path: String) -> String:
 	if path.contains("/Level5/"):
 		return "boss"
-	if path.contains("/Level1/") or path.contains("/Level2/") or path.contains("/Level3/") or path.contains("/Level4/"):
+	if path.contains("/Level") or path.contains("/Zip"):      # every level folder (Level1..4, Zip1, Zip2, ...)
 		return "levels"
 	return "intro"
 

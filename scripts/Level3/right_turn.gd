@@ -15,6 +15,8 @@ func _ready():
 	rt_sprite.rotation_degrees = 0
 	
 func _process(_delta):
+	if not Global.level_roads().is_empty():           # road-based: point the way the traffic goes on the road it snaps to
+		rt_sprite.rotation_degrees = Global.turn_sign_degrees(self)
 	# Only one item can be dragged at a time (Global.drag_owner), and a drag can only
 	# start when the click lands exactly on this item.
 	if not is_instance_valid(Global.drag_owner):
@@ -29,7 +31,7 @@ func _process(_delta):
 	elif Global.drag_owner == self:
 		if Input.is_action_pressed("click"):
 			var fp := Global.area_footprint(self, $Area2D)
-			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1])
+			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1], true)
 		else:
 			_end_drag()
 

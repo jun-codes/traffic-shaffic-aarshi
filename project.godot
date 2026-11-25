@@ -22,6 +22,8 @@ Global="*uid://p7nsx8k23q8c"
 UiFx="*res://scripts/ui_fx.gd"
 Sfx="*res://scripts/sfx.gd"
 Music="*res://scripts/music.gd"
+SignIntro="*res://scripts/sign_intro.gd"
+Decor="*res://scripts/decor.gd"
 
 [display]
 

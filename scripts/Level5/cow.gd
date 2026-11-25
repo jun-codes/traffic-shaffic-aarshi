@@ -3,7 +3,7 @@
 # road, with its legs animated. It blocks the car's body, so driving into it is a crash.
 extends CharacterBody2D
 
-@export var walk_speed := 45.0          # px/s: very slow
+@export var walk_speed := 24.0          # px/s: very slow (needs about 3 s to be clear of the road)
 @export var target_y := 238.0           # it walks up until it is clear of the road
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D

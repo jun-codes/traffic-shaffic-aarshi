@@ -26,7 +26,7 @@ func _ready() -> void:
 	Global.speed_limit_kmh = 50.0
 	Global.extra_road_rects.clear()
 	# The next level is the highway level.
-	Global.next_level = "res://scenes/Level4/level 4.tscn"
+	Global.next_level = Global.next_path_after(scene_file_path)
 	# Every failure goes through _fail so the right screen is chosen.
 	car.death.connect(func(): _crashed_into(car.last_hit))
 	for npc in get_tree().get_nodes_in_group("npc"):
@@ -103,7 +103,11 @@ func death_feedback() -> String:
 			return "The reckless driver behind you was going faster than you and rear-ended you. Try again!"
 		"hit_ahead", "u_turn_crash":
 			return "You ran into the car in front of you."
-		"grass_up", "too_early", "too_late":
+		"too_early":
+			return "The car only turns after it has passed the sign."
+		"too_late":
+			return "The sign was too far from the turn for the car to react to it. Try again!"
+		"grass_up":
 			return "You crashed into the pavement. Try again."
 	return ""
 
@@ -120,3 +124,10 @@ func _other_car_crashed() -> void:
 
 func death_title() -> String:
 	return "A DIFFERENT CAR CRASHED!" if reason == "other_crash" else ""
+
+# --- Turn signs snap to a road and point the way the traffic goes there (see Global.sign_heading) ---
+# (Only the picture's rotation is road-based in this level; what the signs do is still decided by their rays.)
+const SIGN_ROADS := [Rect2(-20, 200, 960, 180), Rect2(320, 330, 175, 350)]   # the main road and the side road (with their curbs)
+
+func sign_roads() -> Array:
+	return SIGN_ROADS

@@ -7,6 +7,7 @@ extends Node2D
 
 const SIDEBAR_X := 933.0    # x where the sidebar starts
 @export var drag_rotation_degrees := 0.0   # the picture turns this much once picked up (shows where the car goes)
+@export var road_turn := false   # a compulsory turn sign: snaps flush to a road and points the way the traffic goes there
 
 var is_dragging := false
 var draggable := false       # mouse is over the sign
@@ -20,6 +21,8 @@ func is_placed() -> bool:
 	return global_position.x < SIDEBAR_X
 
 func _process(_delta):
+	if road_turn and not Global.level_roads().is_empty():
+		$Sprite2D.rotation_degrees = Global.turn_sign_degrees(self)
 	if not is_instance_valid(Global.drag_owner):
 		Global.drag_owner = null
 	if Global.drag_owner == null:
@@ -33,7 +36,7 @@ func _process(_delta):
 	elif Global.drag_owner == self:
 		if Input.is_action_pressed("click"):
 			var fp := Global.area_footprint(self, $Area2D)
-			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1])
+			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1], road_turn)
 		else:
 			_end_drag()
 

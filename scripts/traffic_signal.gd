@@ -38,7 +38,7 @@ func _process(_delta):
 	elif Global.drag_owner == self:
 		if Input.is_action_pressed("click"):
 			var fp := Global.area_footprint(self, $Area2D)
-			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1])
+			global_position = Global.drag_position(get_global_mouse_position(), offset, fp[0], fp[1], true)
 		else:
 			_end_drag()
 
@@ -158,3 +158,4 @@ func _npc_car_sees_signal(body: Node2D) -> void:
 	traff_icon.speed_scale = 2.0
 	traff_icon.play("traffic")                        # red -> green
 	get_tree().create_timer(0.3).timeout.connect(traff_icon.pause)   # hold on green
+
