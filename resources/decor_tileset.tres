@@ -1,0 +1,48 @@
+[gd_resource type="TileSet" format=3 uid="uid://cwyup3sobht6j"]
+
+[ext_resource type="Texture2D" uid="uid://c28xbk7cb8sd1" path="res://assets/nature/decor_atlas.png" id="1_rw7s4"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_q6cfe"]
+texture = ExtResource("1_rw7s4")
+texture_region_size = Vector2i(10, 10)
+0:0/size_in_atlas = Vector2i(16, 32)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, 160)
+16:0/size_in_atlas = Vector2i(16, 32)
+16:0/0 = 0
+16:0/0/texture_origin = Vector2i(0, 160)
+32:0/size_in_atlas = Vector2i(16, 32)
+32:0/0 = 0
+32:0/0/texture_origin = Vector2i(0, 160)
+48:0/size_in_atlas = Vector2i(16, 32)
+48:0/0 = 0
+48:0/0/texture_origin = Vector2i(0, 160)
+64:0/size_in_atlas = Vector2i(16, 32)
+64:0/0 = 0
+64:0/0/texture_origin = Vector2i(0, 160)
+80:0/size_in_atlas = Vector2i(16, 32)
+80:0/0 = 0
+80:0/0/texture_origin = Vector2i(0, 160)
+0:32/size_in_atlas = Vector2i(14, 9)
+0:32/0 = 0
+0:32/0/texture_origin = Vector2i(0, 45)
+16:32/size_in_atlas = Vector2i(20, 9)
+16:32/0 = 0
+16:32/0/texture_origin = Vector2i(0, 45)
+40:32/size_in_atlas = Vector2i(30, 9)
+40:32/0 = 0
+40:32/0/texture_origin = Vector2i(0, 45)
+0:42/size_in_atlas = Vector2i(60, 11)
+0:42/0 = 0
+62:42/size_in_atlas = Vector2i(100, 11)
+62:42/0 = 0
+0:54/size_in_atlas = Vector2i(150, 11)
+0:54/0 = 0
+0:66/size_in_atlas = Vector2i(11, 60)
+0:66/0 = 0
+12:66/size_in_atlas = Vector2i(11, 100)
+12:66/0 = 0
+
+[resource]
+tile_size = Vector2i(40, 40)
+sources/0 = SubResource("TileSetAtlasSource_q6cfe")

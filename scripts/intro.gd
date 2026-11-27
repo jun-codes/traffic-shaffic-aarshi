@@ -13,7 +13,7 @@ const HOVER_SCALE := 1.08
 
 var overlays: Array[Sprite2D] = []
 const BOOK := preload("res://assets/book icon.png")
-const BOOK_RECT := Rect2(1018, 528, 96, 96)      # the encyclopedia button, bottom right
+const BOOK_RECT := Rect2(1008, 518, 112, 112)      # the encyclopedia button, bottom right
 var book_hover := false
 var book_button: Button
 
@@ -35,7 +35,7 @@ func _ready() -> void:
 	book.name = "BookIcon"
 	book.texture = BOOK
 	book.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	book.scale = Vector2(3.0, 3.0)
+	book.scale = Vector2(0.38, 0.38)        # the picture is 320 px: shown about 120 px wide (the book itself fills most of it)
 	book.position = BOOK_RECT.get_center()
 	add_child(book)
 	var tex: Texture2D = $Sprite2D.texture
@@ -62,7 +62,7 @@ func _process(_delta: float) -> void:
 	var book_hot := BOOK_RECT.has_point(mouse)
 	var book_sprite := get_node_or_null("BookIcon") as Sprite2D
 	if book_sprite != null:
-		var bs := 3.0 * (1.12 if book_hot else 1.0)
+		var bs := 0.38 * (1.12 if book_hot else 1.0)
 		book_sprite.scale = book_sprite.scale.lerp(Vector2(bs, bs), 0.4)
 	over = over or book_hot
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND if over else Input.CURSOR_ARROW)
@@ -71,9 +71,10 @@ func _exit_tree() -> void:
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 func _on_button_pressed():
-	# New game wipes all saved progress, then the tutorial explains the game (it ends in level 1).
+	# New game wipes all saved progress, then the five cutscenes play (the first one appears right away, no fade) and
+	# then the tutorial (which ends in level 1).
 	Global.reset_progress()
-	get_tree().change_scene_to_file("res://scenes/tutorial.tscn")
+	get_tree().change_scene_to_file("res://scenes/cutscenes.tscn")
 
 func _on_continue_pressed():
 	var i := Global.continue_index()

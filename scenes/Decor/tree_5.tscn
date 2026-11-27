@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" path="res://assets/nature/tree_5.png" id="1_tree"]
+
+; A tree. Its origin (Position) is where the trunk touches the grass; the picture is drawn above it.
+[node name="Tree 5" type="Sprite2D"]
+texture_filter = 1
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("1_tree")
+centered = false
+offset = Vector2(-80, -320)

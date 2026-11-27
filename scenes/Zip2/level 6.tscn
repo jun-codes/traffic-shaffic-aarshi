@@ -1,6 +1,7 @@
 [gd_scene format=4 uid="uid://bjs1m866mmat"]
 
 [ext_resource type="Texture2D" uid="uid://cwvl3xdwal7na" path="res://assets/grass.png" id="1_d7a3l"]
+[ext_resource type="TileSet" path="res://resources/decor_tileset.tres" id="99_decorts"]
 [ext_resource type="PackedScene" path="res://scenes/Level5/u_turn.tscn" id="97_ut"]
 [ext_resource type="Texture2D" uid="uid://dx8bcm1fevm3e" path="res://assets/roads.png" id="2_74m77"]
 [ext_resource type="Script" uid="uid://crtciokmljrv3" path="res://scripts/finish_line.gd" id="3_mbu12"]
@@ -2763,6 +2764,13 @@ script = ExtResource("99_lvl")
 position = Vector2(579, 333.49997)
 scale = Vector2(0.603125, 0.61759263)
 texture = ExtResource("1_d7a3l")
+
+[node name="Decor" type="Node2D" parent="."]
+
+[node name="DecorTiles" type="TileMapLayer" parent="Decor"]
+scale = Vector2(0.3, 0.3)
+y_sort_enabled = true
+tile_set = ExtResource("99_decorts")
 
 [node name="Roads" type="TileMapLayer" parent="." unique_id=800299304 groups=["road_layer"]]
 position = Vector2(20, 20)

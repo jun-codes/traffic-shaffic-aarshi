@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" uid="uid://cvhmui15kk1yl" path="res://scenes/object.tscn" id="90_signal"]
+[ext_resource type="TileSet" path="res://resources/decor_tileset.tres" id="99_decorts"]
 [ext_resource type="PackedScene" uid="uid://b0sf1x8ou33qf" path="res://scenes/safezone.tscn" id="91_safezone"]
 [ext_resource type="PackedScene" path="res://scenes/not_home.tscn" id="92_nothome"]
 [ext_resource type="Script" path="res://scripts/Level2/cow.gd" id="93_cow"]
@@ -29,6 +30,13 @@ script = ExtResource("1_l2")
 position = Vector2(579, 333.5)
 scale = Vector2(0.603125, 0.61759263)
 texture = ExtResource("2_grass")
+
+[node name="Decor" type="Node2D" parent="."]
+
+[node name="DecorTiles" type="TileMapLayer" parent="Decor"]
+scale = Vector2(0.3, 0.3)
+y_sort_enabled = true
+tile_set = ExtResource("99_decorts")
 
 [node name="Map" parent="." instance=ExtResource("3_level")]
 
