@@ -38,9 +38,9 @@ func _ready() -> void:
 	picture.set_anchors_preset(Control.PRESET_FULL_RECT)
 	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(picture)
-	# Small NEXT and SKIP buttons in the bottom left, in the style of the tutorial buttons (cream with a teal border).
-	next_button = _make_button("NEXT", Rect2(52, 580, 96, 30), _leave)
-	skip_button = _make_button("SKIP", Rect2(158, 580, 96, 30), _skip_all)
+	# Small NEXT and SKIP buttons in the bottom right, in the style of the tutorial buttons (cream with a teal border).
+	next_button = _make_button("NEXT", Rect2(894, 580, 96, 30), _leave)
+	skip_button = _make_button("SKIP", Rect2(1000, 580, 96, 30), _skip_all)
 	layer.add_child(next_button)
 	layer.add_child(skip_button)
 	cover = ColorRect.new()
